@@ -60,7 +60,8 @@ main {
   color: #b30000;
 }
 
-button {
+button,
+.btn {
   background: #b30000;
   color: #fff;
   border: none;
@@ -68,9 +69,12 @@ button {
   border-radius: 5px;
   font-size: 1rem;
   margin-top: 1rem;
+  text-decoration: none;
+  display: inline-block;
 }
 
-button:hover {
+button:hover,
+.btn:hover {
   background: #ff0000;
 }
 

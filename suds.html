@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Interactive Suds Background</title>
+  <style>
+    :root{
+      --bg:#000;           /* site base */
+      --panel:#111;        /* cards/panels */
+      --accent:#b30000;    /* brand red */
+      --text:#fff;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;}
+
+    /* Full-bleed background canvas */
+    #foam{
+      position:fixed;inset:0;z-index:-1; /* behind everything */
+      width:100vw;height:100vh;display:block; /* avoid scrollbars */
+      background:radial-gradient(120vw 120vh at 50% -20%, rgba(179,0,0,0.2), transparent 60%),
+                 radial-gradient(60vw 60vh at 80% 120%, rgba(179,0,0,0.12), transparent 70%),
+                 #000;
+    }
+
+    /* Soft vignette for depth */
+    #vignette{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(80vw 80vh at 50% 50%, transparent 60%, rgba(0,0,0,.35));}
+
+    /* Controls */
+    .controls{
+      position:fixed;right:1rem;top:1rem;z-index:10;
+      background:var(--panel);border:1px solid #222;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);
+      padding:12px 14px;max-width:min(360px,90vw);
+      backdrop-filter:blur(8px);
+    }
+    .controls header{display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem}
+    .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px rgba(179,0,0,.8) inset,0 0 8px rgba(179,0,0,.5);} 
+    .controls h2{font-size:1rem;margin:0;color:var(--text)}
+    .group{border-top:1px solid #222;margin-top:.4rem;padding-top:.4rem}
+    .row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:.6rem;margin:.4rem 0}
+    .row label{font-size:.85rem;opacity:.9}
+    .row input[type="range"]{width:160px}
+    .swatch{display:flex;align-items:center;gap:.5rem}
+    .swatch input[type="color"]{appearance:none;border:none;width:28px;height:28px;padding:0;border-radius:50%;overflow:hidden;background:#000}
+    .swatch input[type="range"]{width:100px}
+
+    .btnbar{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.25rem}
+    button, .toggle{cursor:pointer;border:1px solid #333;background:var(--accent);color:#fff;border-radius:10px;padding:.45rem .7rem;font-size:.85rem}
+    button:hover, .toggle:hover{filter:brightness(1.1)}
+    .ghost{background:#1a1a1a;border-color:#333}
+
+    .stats{opacity:.75;font-size:.8rem;margin-top:.35rem}
+    .footer-note{opacity:.6;font-size:.75rem;margin-top:.2rem}
+
+    /* Mobile niceties */
+    @media (max-width: 720px){
+      .controls{left:1rem;right:auto;bottom:1rem;top:auto}
+    }
+
+    /* Accessible focus outline */
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+    /* Optional content slot (safe demo text) */
+    .demo-title{position:fixed;left:1rem;bottom:1rem;z-index:1;background:rgba(0,0,0,.35);padding:.5rem .75rem;border-radius:10px;border:1px solid #222}
+    .demo-title h1{margin:0;font-size:1rem;color:var(--accent)}
+    .demo-title p{margin:.15rem 0 0 0;font-size:.85rem;opacity:.85}
+
+    /* Reduced motion: cut particle count & animation amplitude via JS flags, but also dim panel glow */
+    @media (prefers-reduced-motion: reduce){
+      .dot{box-shadow:none}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="foam" aria-hidden="true"></canvas>
+  <div id="vignette" aria-hidden="true"></div>
+
+  <!-- Controls -->
+  <section class="controls" role="group" aria-label="Suds Controls">
+    <header><span class="dot" aria-hidden="true"></span><h2>Soap Suds Background</h2></header>
+    <div class="group">
+      <div class="row"><label for="count">Bubble count</label><input id="count" type="range" min="200" max="3000" value="1200" /></div>
+      <div class="row"><label for="size">Bubble size</label><input id="size" type="range" min="2" max="12" value="5" /></div>
+      <div class="row"><label for="gravity">Gravity (drip)</label><input id="gravity" type="range" min="0" max="200" value="60" /></div>
+      <div class="row"><label for="visc">Viscosity (drag)</label><input id="visc" type="range" min="0" max="100" value="20" /></div>
+      <div class="row"><label for="flow">Flow swirl</label><input id="flow" type="range" min="0" max="200" value="60" /></div>
+      <div class="row"><label for="mouse">Mouse influence</label><input id="mouse" type="range" min="0" max="400" value="160" /></div>
+      <div class="row"><label for="glow">Glow</label><input id="glow" type="range" min="0" max="40" value="16" /></div>
+    </div>
+
+    <div class="group" aria-label="Dyes">
+      <div class="row swatch"><label>Dye #1</label><input id="dye1" type="color" value="#b30000" /><input id="mix1" type="range" min="0" max="100" value="70" title="Mix %" /></div>
+      <div class="row swatch"><label>Dye #2</label><input id="dye2" type="color" value="#ffffff" /><input id="mix2" type="range" min="0" max="100" value="20" title="Mix %" /></div>
+      <div class="row swatch"><label>Dye #3</label><input id="dye3" type="color" value="#ee4540" /><input id="mix3" type="range" min="0" max="100" value="10" title="Mix %" /></div>
+      <div class="btnbar">
+        <button id="paint1" title="Paint with Dye #1 (key: 1)">Paint #1</button>
+        <button id="paint2" class="ghost" title="Paint with Dye #2 (key: 2)">Paint #2</button>
+        <button id="paint3" class="ghost" title="Paint with Dye #3 (key: 3)">Paint #3</button>
+        <button id="reset" class="ghost" title="Reset particles">Reset</button>
+        <button id="toggleUI" class="ghost" title="Hide panel">Hide UI</button>
+      </div>
+      <div class="stats" id="stats">—</div>
+      <div class="footer-note">Tip: drag to stir; click to inject dye; press 1/2/3 to switch dye.</div>
+    </div>
+  </section>
+
+  <div class="demo-title" aria-hidden="true">
+    <h1>Damien’s Demon Detailing</h1>
+    <p>Interactive foam background · single-file drop‑in</p>
+  </div>
+
+  <script>
+  ;(() => {
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const canvas = document.getElementById('foam');
+    const ctx = canvas.getContext('2d');
+
+    // Controls
+    const ui = {
+      count: document.getElementById('count'),
+      size: document.getElementById('size'),
+      gravity: document.getElementById('gravity'),
+      visc: document.getElementById('visc'),
+      flow: document.getElementById('flow'),
+      mouse: document.getElementById('mouse'),
+      glow: document.getElementById('glow'),
+      dye1: document.getElementById('dye1'),
+      dye2: document.getElementById('dye2'),
+      dye3: document.getElementById('dye3'),
+      mix1: document.getElementById('mix1'),
+      mix2: document.getElementById('mix2'),
+      mix3: document.getElementById('mix3'),
+      paint1: document.getElementById('paint1'),
+      paint2: document.getElementById('paint2'),
+      paint3: document.getElementById('paint3'),
+      reset: document.getElementById('reset'),
+      toggleUI: document.getElementById('toggleUI'),
+      stats: document.getElementById('stats')
+    };
+
+    let W = 0, H = 0, time = 0;
+    let particles = [];
+    const pointer = {x:0, y:0, px:0, py:0, vx:0, vy:0, down:false, dye:1};
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion){ ui.count.value = Math.min(800, ui.count.value); ui.glow.value = 6; }
+
+    function resize(){
+      W = Math.floor(innerWidth*dpr); H = Math.floor(innerHeight*dpr);
+      canvas.width = W; canvas.height = H;
+      canvas.style.width = innerWidth+"px"; canvas.style.height = innerHeight+"px";
+    }
+    resize(); addEventListener('resize', resize);
+
+    // Utility: random, lerp, clamp
+    const rand = (a=0,b=1)=>a+Math.random()*(b-a);
+    const clamp = (v,a,b)=>v<a?a:v>b?b:v;
+    const lerp = (a,b,t)=>a+(b-a)*t;
+
+    function hexToRgb(h){
+      const x = h.replace('#','');
+      const bigint = parseInt(x.length===3? x.replace(/(.)/g,'$1$1') : x, 16);
+      const r = (bigint >> 16) & 255; const g = (bigint >> 8) & 255; const b = bigint & 255;
+      return [r,g,b];
+    }
+    function mixRgb(a,b,t){return [Math.round(lerp(a[0],b[0],t)),Math.round(lerp(a[1],b[1],t)),Math.round(lerp(a[2],b[2],t))];}
+
+    // Curl-like pseudo flow field (cheap + pretty)
+    function flowField(x,y,t,amp){
+      // normalize to 0..1
+      const u = x/W, v = y/H;
+      const s = Math.sin((u*3.2 + t*0.15)*Math.PI*2);
+      const c = Math.cos((v*2.4 - t*0.1)*Math.PI*2);
+      const w = Math.sin(((u+v)*1.7 + t*0.08)*Math.PI*2);
+      // divergence-free-ish twists
+      return { vx: (c - w)*amp, vy: (s + w*0.5)*amp };
+    }
+
+    class Bubble{
+      constructor(){ this.reset(true); }
+      reset(initial=false){
+        // spawn near top with slight spread to feel like foam dripping down a panel
+        this.x = rand(0, W); this.y = initial? rand(0,H*0.6) : rand(-40, 40);
+        this.r = rand(2, parseFloat(ui.size.value));
+        this.vx = rand(-.2,.2); this.vy = rand(.05,.4);
+        this.tint = this.pickTint();
+        this.life = rand(0.4,1); // impacts alpha
+      }
+      pickTint(){
+        const m1 = +ui.mix1.value, m2 = +ui.mix2.value, m3 = +ui.mix3.value; const tot = Math.max(1, m1+m2+m3);
+        const p = rand(0,tot);
+        const c1 = hexToRgb(ui.dye1.value), c2 = hexToRgb(ui.dye2.value), c3 = hexToRgb(ui.dye3.value);
+        if (p < m1) return c1; else if (p < m1+m2) return c2; else return c3;
+      }
+      step(dt){
+        // global forces
+        const grav = (+ui.gravity.value)/1000;          // px/ms
+        const visc = (+ui.visc.value)/10000;            // drag
+        const amp = (+ui.flow.value)/1000;              // swirl amount
+        const mousePow = (+ui.mouse.value)/1000;        // pointer stirring
+
+        // flow
+        const f = flowField(this.x, this.y, time*0.001, amp);
+        this.vx += f.vx; this.vy += f.vy + grav;
+
+        // pointer swirl
+        const dx = this.x - pointer.x, dy = this.y - pointer.y;
+        const dist2 = dx*dx + dy*dy;
+        const rad = Math.max(40, (parseFloat(ui.size.value)*12));
+        if (dist2 < (rad*rad)){
+          const inv = 1 / Math.max(24, dist2*0.02);
+          // perpendicular impulse (swirl around pointer)
+          this.vx += ( -pointer.vy * inv) * mousePow * rad;
+          this.vy += (  pointer.vx * inv) * mousePow * rad;
+          if (pointer.down){ // injection = push outward a bit
+            this.vx += dx * inv * mousePow * 8;
+            this.vy += dy * inv * mousePow * 8;
+            // recolor toward active dye while pointer down
+            const target = pointer.dye===1 ? hexToRgb(ui.dye1.value) : pointer.dye===2 ? hexToRgb(ui.dye2.value) : hexToRgb(ui.dye3.value);
+            this.tint = mixRgb(this.tint, target, 0.25);
+          }
+        }
+
+        // drag
+        this.vx *= (1 - visc); this.vy *= (1 - visc);
+
+        // integrate
+        this.x += this.vx * dt; this.y += this.vy * dt;
+
+        // wrap/respawn when off screen bottom or sides
+        if (this.y - this.r > H + 10 || this.x < -20 || this.x > W+20){ this.reset(false); this.y = -this.r - rand(4,40); }
+      }
+      draw(){
+        // soft foam ring look: white-ish core with dyed rim; composited additively
+        const g = ctx.createRadialGradient(this.x, this.y, this.r*0.3, this.x, this.y, this.r);
+        const [r,gc,b] = this.tint;
+        const alpha = 0.045 + this.life*0.06;
+        const ring = `rgba(${r},${gc},${b},${alpha})`;
+        g.addColorStop(0, `rgba(255,255,255,${alpha*1.2})`);
+        g.addColorStop(0.55, `rgba(${r},${gc},${b},${alpha})`);
+        g.addColorStop(1, `rgba(0,0,0,0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    function rebuild(count){
+      particles.length = 0;
+      for (let i=0;i<count;i++) particles.push(new Bubble());
+    }
+
+    // initial build
+    rebuild(+ui.count.value);
+
+    // Pointer handlers
+    const bound = canvas.getBoundingClientRect();
+    function updatePointer(e){
+      const x = (e.touches? e.touches[0].clientX : e.clientX) * dpr;
+      const y = (e.touches? e.touches[0].clientY : e.clientY) * dpr;
+      pointer.vx = (x - pointer.x); pointer.vy = (y - pointer.y);
+      pointer.px = pointer.x; pointer.py = pointer.y; pointer.x = x; pointer.y = y;
+    }
+    addEventListener('pointermove', updatePointer, {passive:true});
+    addEventListener('pointerdown', e=>{ pointer.down = true; updatePointer(e); });
+    addEventListener('pointerup',   ()=>{ pointer.down = false; });
+    addEventListener('keydown', (e)=>{
+      if (e.key==='1'){ setActiveDye(1); }
+      if (e.key==='2'){ setActiveDye(2); }
+      if (e.key==='3'){ setActiveDye(3); }
+    });
+
+    function setActiveDye(n){
+      pointer.dye = n;
+      ui.paint1.classList.toggle('ghost', n!==1);
+      ui.paint2.classList.toggle('ghost', n!==2);
+      ui.paint3.classList.toggle('ghost', n!==3);
+    }
+
+    ui.paint1.onclick = ()=>setActiveDye(1);
+    ui.paint2.onclick = ()=>setActiveDye(2);
+    ui.paint3.onclick = ()=>setActiveDye(3);
+    ui.reset.onclick  = ()=>rebuild(+ui.count.value);
+
+    ui.toggleUI.onclick = ()=>{
+      const open = document.querySelector('.controls');
+      open.style.display = (open.style.display==='none') ? 'block' : 'none';
+    }
+
+    // React to sliders
+    ui.count.addEventListener('input', ()=>{
+      const c = +ui.count.value|0; const diff = c - particles.length;
+      if (diff>0){ for (let i=0;i<diff;i++) particles.push(new Bubble()); }
+      else if (diff<0){ particles.length = c; }
+    });
+
+    // Rendering
+    function drawFrame(ms){
+      const now = ms || performance.now();
+      const dt = 16; // fixed-ish timestep in ms for consistent feel
+      time = now;
+
+      // Clear with gentle fade for trailing glow
+      ctx.globalCompositeOperation = 'source-over';
+      const glow = +ui.glow.value;
+      ctx.fillStyle = `rgba(0,0,0,${Math.max(0.08, 0.28 - glow/100)})`;
+      ctx.fillRect(0,0,W,H);
+
+      // Additive pass
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.shadowBlur = glow; ctx.shadowColor = 'rgba(255,255,255,0.15)';
+
+      const steps = 1; // keep 1 for perf; could substep if needed
+      for (let s=0;s<steps;s++){
+        for (let i=0;i<particles.length;i++){
+          particles[i].step(dt/steps); particles[i].draw();
+        }
+      }
+
+      // HUD
+      ctx.globalCompositeOperation = 'source-over'; ctx.shadowBlur = 0;
+      if (ui.stats){ ui.stats.textContent = `${particles.length} bubbles · gravity ${(ui.gravity.value/100).toFixed(2)} · flow ${(ui.flow.value/100).toFixed(2)} · visc ${(ui.visc.value/100).toFixed(2)}`; }
+
+      requestAnimationFrame(drawFrame);
+    }
+
+    requestAnimationFrame(drawFrame);
+
+  })();
+  </script>
+</body>
+</html>

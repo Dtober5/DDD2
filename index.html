@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Damien's Demon Detailing</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
@@ -14,7 +14,8 @@
 
   <main id="selection-screen" class="screen">
     <p class="greeting">Select the services you're interested in:</p>
-    <a href="suds.html" class="btn">Explore Services</a>
+    <a href="suds.html" class="btn">Explore Services (Foam Visual)</a>
+
     <form id="services-form">
       <div class="service">
         <details>
@@ -88,28 +89,4 @@
         <details>
           <summary>
             <label>
-              <input type="checkbox" name="service" value="Tire Dressing"> Tire Dressing <span class="price">$10</span>
-            </label>
-          </summary>
-          <p>Condition and shine your tires for a fresh look.</p>
-        </details>
-      </div>
-
-      <button type="button" id="confirm-btn">Confirm Selection</button>
-    </form>
-  </main>
-
-  <main id="summary-screen" class="screen hidden">
-    <h2>Your Selection</h2>
-    <ul id="summary-list"></ul>
-    <form id="contact-form">
-      <input type="text" id="customer-name" placeholder="Your Name" required>
-      <input type="email" id="customer-email" placeholder="Your Email" required>
-      <button type="submit">Send Request</button>
-    </form>
-    <button type="button" id="back-btn">Back</button>
-  </main>
-
-  <script src="script.js"></script>
-</body>
-</html>
+              <input type="checkbox" name="service" value="Tire Dressing"> Tire Dressing <span clas

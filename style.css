@@ -117,3 +117,54 @@ button:hover,
 
 .fade-in  { animation: fadeIn 0.5s forwards; }
 .fade-out { animation: fadeOut 0.5s forwards; }
+
+/* === Red Foam Background + Trickle Scaffold === */
+:root{
+  --foam-red: #3a0c12;        /* base */
+  --foam-pink: rgba(255,100,120,.12);
+  --foam-bright: rgba(255,180,190,.07);
+}
+body{
+  background: var(--foam-red);
+  position: relative;
+  overflow-x: hidden;
+}
+body::before{
+  /* “foam-like” speckles using layered radial gradients */
+  content:"";
+  position: fixed; inset:0;
+  background:
+    radial-gradient(18px 18px at 20% 15%, var(--foam-bright) 0 45%, transparent 46% 100%),
+    radial-gradient(14px 14px at 75% 22%, var(--foam-pink)   0 45%, transparent 46% 100%),
+    radial-gradient(20px 20px at 40% 40%, var(--foam-bright) 0 45%, transparent 46% 100%),
+    radial-gradient(12px 12px at 60% 70%, var(--foam-pink)   0 45%, transparent 46% 100%),
+    radial-gradient(22px 22px at 10% 85%, var(--foam-bright) 0 45%, transparent 46% 100%),
+    radial-gradient(16px 16px at 88% 60%, var(--foam-pink)   0 45%, transparent 46% 100%),
+    radial-gradient(20px 20px at 55% 10%, var(--foam-bright) 0 45%, transparent 46% 100%),
+    radial-gradient(14px 14px at 30% 80%, var(--foam-pink)   0 45%, transparent 46% 100%),
+    radial-gradient(18px 18px at 90% 90%, var(--foam-bright) 0 45%, transparent 46% 100%);
+  background-blend-mode: screen;
+  opacity:.55;                /* readable text over it */
+  pointer-events:none;
+  will-change: transform;
+  animation: trickle 240s linear infinite;
+}
+/* Slow vertical “trickle”. You can pause/play via JS later. */
+@keyframes trickle { from { transform: translateY(-2%);} to { transform: translateY(2%);} }
+
+/* === Hover tooltips for service descriptions (replace dropdowns UX) === */
+.service details{ position:relative; }
+.service details summary{ list-style:none; }
+.service details summary::-webkit-details-marker{ display:none; }
+.service details p{
+  position:absolute; left:0; right:0; top:100%;
+  background:#1b1b1b; border:1px solid #333; color:#eee;
+  padding:.6rem .7rem; border-radius:8px; margin-top:.35rem;
+  opacity:0; transform: translateY(-6px); transition:.18s ease;
+  pointer-events:none; z-index:5;
+  box-shadow:0 10px 25px rgba(0,0,0,.35);
+}
+.service details:hover p{ opacity:1; transform: translateY(0); }
+
+/* keep text readable on the red scheme */
+header, .service details, #contact-form{ background: rgba(0,0,0,.25); }

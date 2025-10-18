@@ -1,92 +1,196 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Damien's Demon Detailing</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Demon Detailing — Services</title>
+<meta name="description" content="Pick your services, learn what they do on hover, and send your selections to Damien." />
+
+<style>
+  /* ===== Red foam background with slow “trickle” animation ===== */
+  :root{
+    --foam-red: #300c12;              /* dark base so text stays readable */
+    --foam-pink: rgba(255,110,130,.12);
+    --foam-bright: rgba(255,200,210,.08);
+    --panel: rgba(0,0,0,.28);
+    --border: rgba(255,255,255,.12);
+    --text: #e8eef7;
+    --muted:#b6c3d6;
+    --brand:#86e1ff;
+  }
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--text); background:var(--foam-red);
+    font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+    overflow-x:hidden; position:relative;
+  }
+  /* speckled foam built from layered radial gradients */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; opacity:.55;
+    background:
+      radial-gradient(18px 18px at 20% 15%, var(--foam-bright) 0 45%, transparent 46% 100%),
+      radial-gradient(14px 14px at 75% 22%, var(--foam-pink)   0 45%, transparent 46% 100%),
+      radial-gradient(20px 20px at 40% 40%, var(--foam-bright) 0 45%, transparent 46% 100%),
+      radial-gradient(12px 12px at 60% 70%, var(--foam-pink)   0 45%, transparent 46% 100%),
+      radial-gradient(22px 22px at 10% 85%, var(--foam-bright) 0 45%, transparent 46% 100%),
+      radial-gradient(16px 16px at 88% 60%, var(--foam-pink)   0 45%, transparent 46% 100%),
+      radial-gradient(20px 20px at 55% 10%, var(--foam-bright) 0 45%, transparent 46% 100%),
+      radial-gradient(14px 14px at 30% 80%, var(--foam-pink)   0 45%, transparent 46% 100%),
+      radial-gradient(18px 18px at 90% 90%, var(--foam-bright) 0 45%, transparent 46% 100%);
+    background-blend-mode: screen;
+    will-change: transform;
+    animation: trickle 240s linear infinite; /* super slow */
+  }
+  @keyframes trickle { from{ transform: translateY(-2%);} to{ transform: translateY(2%);} }
+  /* Add `foam-paused` to body to stop animation later if you want */
+  body.foam-paused::before{ animation-play-state: paused; }
+
+  /* ===== Layout ===== */
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 28px 16px 80px; }
+  header{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+  .logo{ width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #243b55, #141e30); display:grid; place-items:center; font-weight:800; letter-spacing:.5px; }
+  h1{ font-size:20px; margin:0 }
+  p.lead{ color:var(--muted); margin:8px 0 0 }
+
+  /* ===== Service list with hover tooltips ===== */
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:16px; }
+  .services{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin-top:12px; }
+  .service{ position:relative; border:1px solid var(--border); background:rgba(0,0,0,.2); border-radius:12px; padding:12px 12px 12px 44px; min-height:64px; }
+  .service input{ position:absolute; left:12px; top:14px; transform:scale(1.2); }
+  .service label{ display:block; font-weight:600; cursor:pointer; }
+  .service .tip{
+    position:absolute; left:12px; right:12px; bottom:auto; top:100%;
+    background:#0b0f16; border:1px solid #233048; color:#e7eefc;
+    padding:.6rem .7rem; border-radius:10px; margin-top:.35rem; box-shadow:0 10px 28px rgba(0,0,0,.35);
+    opacity:0; transform: translateY(-6px); transition: .18s ease; pointer-events:none; z-index:5; font-size:13px;
+  }
+  .service:hover .tip{ opacity:1; transform: translateY(0); }
+
+  .actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
+  .btn{ appearance:none; border:1px solid var(--border); background:#0b1528; color:var(--text); padding:10px 14px; border-radius:10px; cursor:pointer; text-decoration:none; }
+  .btn.ghost{ background:transparent }
+  .btn:active{ transform:translateY(1px) }
+
+  footer{ margin-top:16px; color:var(--muted); font-size:13px; text-align:center }
+
+  /* small form styles */
+  form#contact{ margin-top:12px; display:grid; gap:8px; }
+  form#contact input, form#contact textarea{
+    width:100%; color:var(--text); background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+  }
+</style>
 </head>
+
 <body>
-  <header>
-    <div class="logo" aria-label="DDD logo"></div>
-    <h1>Damien's Demon Detailing</h1>
-  </header>
-
-  <main id="selection-screen" class="screen">
-    <p class="greeting">Select the services you're interested in:</p>
-    <a href="suds.html" class="btn">Explore Services (Foam Visual)</a>
-
-    <form id="services-form">
-      <div class="service">
-        <details>
-          <summary>
-            <label>
-              <input type="checkbox" name="service" value="Basic Wash Package"> Basic Wash Package <span class="price">$30</span>
-            </label>
-          </summary>
-          <p>Touchless pre-rinse, foam cannon soak, rinse and double bucket hand wash.</p>
-        </details>
+  <div class="wrap">
+    <header>
+      <div class="logo">DDD</div>
+      <div>
+        <h1>Demon Detailing — Services</h1>
+        <p class="lead">Hover any service to see what it does. Pick what you want, then send your selections to me.</p>
       </div>
+    </header>
 
-      <div class="service">
-        <details>
-          <summary>
-            <label>
-              <input type="checkbox" name="service" value="Tire Wash &amp; Polish"> Tire Wash &amp; Polish <span class="price">$15</span>
-            </label>
-          </summary>
-          <p>Deep clean tires and apply a high-gloss polish.</p>
-        </details>
+    <main class="card">
+      <h2 style="margin:0 0 6px 0;font-size:18px;">Choose your services</h2>
+
+      <form id="servicesForm" class="services">
+        <!-- Service 1 -->
+        <div class="service">
+          <input id="s1" type="checkbox" value="Foam Bath & Hand Wash">
+          <label for="s1">Foam Bath & Hand Wash</label>
+          <div class="tip">Thick pre-soak to lift grime, two-bucket hand wash, microfiber safe-dry. Reduces swirl risk.</div>
+        </div>
+        <!-- Service 2 -->
+        <div class="service">
+          <input id="s2" type="checkbox" value="Interior Refresh">
+          <label for="s2">Interior Refresh</label>
+          <div class="tip">Vacuum, plastics wiped, screens cleaned, glass inside/out. Fresh, not glossy or greasy.</div>
+        </div>
+        <!-- Service 3 -->
+        <div class="service">
+          <input id="s3" type="checkbox" value="Decon + Clay">
+          <label for="s3">Decon + Clay</label>
+          <div class="tip">Iron remover + clay to strip bonded contamination for a smooth base before protection.</div>
+        </div>
+        <!-- Service 4 -->
+        <div class="service">
+          <input id="s4" type="checkbox" value="Paint Sealant">
+          <label for="s4">Paint Sealant</label>
+          <div class="tip">Durable polymer sealant for gloss and hydrophobics (~6 months) — faster than a coating.</div>
+        </div>
+        <!-- Service 5 -->
+        <div class="service">
+          <input id="s5" type="checkbox" value="Headlight Restore">
+          <label for="s5">Headlight Restore</label>
+          <div class="tip">Wet-sand, polish, and UV seal to bring clarity back and keep it that way.</div>
+        </div>
+        <!-- Service 6 -->
+        <div class="service">
+          <input id="s6" type="checkbox" value="Engine Bay Clean (Light)">
+          <label for="s6">Engine Bay Clean (Light)</label>
+          <div class="tip">Low-risk plastics wipe-down + dressing. No heavy water intrusion. Good for resale photos.</div>
+        </div>
+      </form>
+
+      <div class="actions">
+        <a href="#" class="btn" id="go-results">Send My Selections</a>
       </div>
+    </main>
 
-      <div class="service">
-        <details>
-          <summary>
-            <label>
-              <input type="checkbox" name="service" value="Clay Bar Package"> Clay Bar Package <span class="price">$50</span>
-            </label>
-          </summary>
-          <p>Remove embedded contaminants for a smooth, glass-like finish.</p>
-        </details>
-      </div>
+    <section class="card">
+      <h2 style="margin:0 0 6px 0;font-size:18px;">Questions?</h2>
+      <p class="lead">Shoot me a note and I’ll reply fast.</p>
+      <form id="contact">
+        <input id="name" placeholder="Your name" autocomplete="name">
+        <input id="email" type="email" placeholder="Your email (optional)" autocomplete="email">
+        <textarea id="msg" rows="4" placeholder="What can I help with?"></textarea>
+        <div class="actions">
+          <button class="btn" id="send-mail">Email Damien</button>
+        </div>
+      </form>
+    </section>
 
-      <h2>Paint Correction</h2>
+    <footer>© <span id="y"></span> Demon Detailing — San Antonio</footer>
+  </div>
 
-      <div class="service">
-        <details>
-          <summary>
-            <label>
-              <input type="checkbox" name="service" value="Compound"> Compound <span class="price">$80</span>
-            </label>
-          </summary>
-          <p>Cut through oxidation and heavy swirls.</p>
-        </details>
-      </div>
+<script>
+  // Footer year
+  document.getElementById('y').textContent = new Date().getFullYear();
 
-      <div class="service">
-        <details>
-          <summary>
-            <label>
-              <input type="checkbox" name="service" value="Polish"> Polish <span class="price">$60</span>
-            </label>
-          </summary>
-          <p>Refine paint clarity and remove light imperfections.</p>
-        </details>
-      </div>
+  // Background trickle toggle scaffolding (use later if needed)
+  const Foam = {
+    start(){ document.body.classList.remove('foam-paused'); },
+    stop(){ document.body.classList.add('foam-paused'); }
+  };
+  // Foam.stop(); // uncomment to pause on load
 
-      <div class="service">
-        <details>
-          <summary>
-            <label>
-              <input type="checkbox" name="service" value="Wax"> Wax <span class="price">$40</span>
-            </label>
-          </summary>
-          <p>Protect and enhance gloss with a durable wax.</p>
-        </details>
-      </div>
+  // Send selections → results page
+  const servicesForm = document.getElementById('servicesForm');
+  document.getElementById('go-results')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const picks = Array.from(servicesForm.querySelectorAll('input[type="checkbox"]:checked'))
+                 .map(cb => cb.value);
+    if (!picks.length) { alert('Please select at least one service.'); return; }
+    localStorage.setItem('selectedServices', JSON.stringify(picks));
+    location.href = 'results.html';
+  });
 
-      <div class="service">
-        <details>
-          <summary>
-            <label>
-              <input type="checkbox" name="service" value="Tire Dressing"> Tire Dressing <span clas
+  // Quick “Email Damien” on the contact card
+  document.getElementById('send-mail')?.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const name = (document.getElementById('name').value||'').trim();
+    const email = (document.getElementById('email').value||'').trim();
+    const msg = (document.getElementById('msg').value||'').trim();
+    const subject = encodeURIComponent('Detailing Inquiry');
+    const body = encodeURIComponent(
+      (name?`Name: ${name}\n`:'') +
+      (email?`Email: ${email}\n\n`:'') +
+      (msg?`${msg}\n\n`:'') +
+      '— sent from Demon Detailing'
+    );
+    location.href = `mailto:damientober@gmail.com?subject=${subject}&body=${body}`;
+  });
+</script>
+</body>
+</html>
